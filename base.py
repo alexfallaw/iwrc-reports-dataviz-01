@@ -1,12 +1,5 @@
 import pandas as pd
 
-c = {
-  "colA": [7, 5, 2, 2, 4],
-  "colB": [9, 40, 3, 9, 67]
-}
+df3 = pd.DataFrame({"X": ["B", "A", "B", "A", "B"], "Y": [1, 4, 3, 2, 5], "Z": [11, 14, 13, 12, 15]})
 
-tableC = pd.DataFrame(c)
-
-x = tableC["colA", "colB"].mode()[1]
-
-print(x)
+print(df3["Y"].agg(['sum']))
