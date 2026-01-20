@@ -1,18 +1,3 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-
-def clean_currency(x):
-  print(f"Cleaning value: {x}")
-  if isinstance(x, str):
-    return float(x.replace('$', '').replace(',', '').strip())
-  
-  return float(x)
-    
-
-
-proj_data = pd.read_csv('sample_data.csv')
-
 # make subset of data with only relevant columns
 proj_data = proj_data[['Project ID', 'Funding Type', 'Funding Amount']]
 
