@@ -77,3 +77,60 @@ for i, v in enumerate(fund_grps['Funding Amount']):
   ax3.text(i, v + max(fund_grps['Funding Amount']) * 0.01, "${:,.0f}".format(v), ha='center', va='bottom')
 
 plt.show()
+
+
+cat_data = pd.read_csv('data/category_data.csv')
+
+# ----- CATEGORY VISUALIZATIONS PT. 1 -----
+# Subplots (from cat_data):
+# 1. bar chart, 'Category' vs. 'Count'
+# Subplots (from proj_data):
+# 1. bar chart, grouped by 'WRRI Science Priority', count of projects in each priority
+# Figure arrangement:
+# 1 row, 3 columns (first subplot on left, first subplot legend in middle, second subplot on right)
+# all subplots should use legends instead of direct labels
+
+cat_bar_fig = plt.figure(figsize=(24, 12))
+
+# Subplot 1: Category vs. Count
+# title: Category Usage
+# y label: # of Projects Using Category
+# x labels: none (use legend instead)
+# legend: each category
+# put number on top of each bar
+# put percentages just below top of bar
+ax1 = cat_bar_fig.add_subplot(1, 1, 1)
+colors1 = plt.cm.Set3(range(len(cat_data)))
+bars1 = ax1.bar(cat_data['Category'], cat_data['Count'], color=colors1)
+ax1.set_xticks([])
+ax1.set_title('Category Usage')
+ax1.set_ylabel('# of Projects Using Category')
+ax1.legend(bars1, cat_data['Category'], title='Categories', loc='upper right')
+for i, v in enumerate(cat_data['Count']):
+  ax1.text(i, v + 0.125, str(v), ha='center', va='bottom')
+  percentage = (v / cat_data['Count'].sum()) * 100
+  ax1.text(i, v - 0.25, f'{percentage:.1f}%', ha='center', va='top')
+
+
+# Subplot 2: WRRI Science Priority vs. Project Count
+# title: WRRI Science Priority vs. Project Count
+# y label: # of Projects
+# x labels: none (use legend instead)
+# legend: each category
+# put number on top of each bar
+# put percentages just below top of bar
+wrri_counts = proj_data['WRRI Science Priority'].value_counts()
+ax2 = cat_bar_fig.add_subplot(1, 3, 2)
+colors2 = plt.cm.Pastel1(range(len(wrri_counts)))
+bars2 = ax2.bar(wrri_counts.index, wrri_counts.values, color=colors2)
+ax2.set_title('WRRI Science Priority vs. Project Count')
+ax2.set_xticks([])
+ax2.set_ylabel('# of Projects')
+ax2.legend(bars2, wrri_counts.index, title='WRRI Science Priorities', loc='upper right')
+for i, v in enumerate(wrri_counts.values):
+  ax2.text(i, v + 0.125, str(v), ha='center', va='bottom')
+  percentage = (v / wrri_counts.sum()) * 100
+  ax2.text(i, v - 0.25, f'{percentage:.1f}%', ha='center', va='top')
+
+plt.tight_layout()
+cat_bar_fig.savefig('saved_figs/category_bar_visualizations.png')

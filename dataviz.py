@@ -1,5 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import matplotlib.cm as cm
 import numpy as np
 
 def clean_currency(x):
@@ -72,6 +74,7 @@ cat_data = pd.DataFrame({
 funding_fig = plt.figure(figsize=(12, 8))
 
 # Subplot 1: Funding Type vs. Project Count
+# sort by project count descending
 # y label: # of Projects
 # y tick marks go from 0 to 25 in increments of 5
 # put number on top of each bar
@@ -86,12 +89,13 @@ for i, (category, count) in enumerate(funding_type_counts.items()):
   ax1.text(i, count + 0.125, str(count), ha='center', va='bottom')
 
 # Subplot 2: Funding Type vs. Total Funding Amount
+# sort by total funding amount descending
 # y label: Total Funding Amount
 # put number on top of each bar
 # y axis formatted as currency in units of 1.XM
 # y tick marks go from 0 to 3,000,000 in increments of 500,000
 ax2 = funding_fig.add_subplot(2, 2, 2)
-funding_amounts = proj_data.groupby('Funding Type')['Funding Amount'].sum()
+funding_amounts = proj_data.groupby('Funding Type')['Funding Amount'].sum().sort_values(ascending=False)
 ax2.bar(funding_amounts.index, funding_amounts.values)
 ax2.set_title('Funding Type vs. Total Funding Amount')
 ax2.tick_params(axis='x', labelsize=8)
@@ -102,12 +106,13 @@ for i, (category, amount) in enumerate(funding_amounts.items()):
   ax2.text(i, amount + 25000, f'${amount/1e6:.1f}M', ha='center', va='bottom')
 
 # Subplot 3: Funding Type vs. Average Funding Per Project
+# sort by average funding amount descending
 # y label: Average Funding Per Project
 # put number on top of each bar
 # if number is > 235000, put number just below top of bar instead and make it white
 # y axis formatted as currency in units of 1.XK
 ax3 = funding_fig.add_subplot(2, 2, 3)
-funding_averages = proj_data.groupby('Funding Type')['Funding Amount'].mean()
+funding_averages = proj_data.groupby('Funding Type')['Funding Amount'].mean().sort_values(ascending=False)
 ax3.bar(funding_averages.index, funding_averages.values)
 ax3.set_title('Funding Type vs. Average Funding Per Project')
 ax3.tick_params(axis='x', labelsize=8)
@@ -164,7 +169,7 @@ for i, v in enumerate(stu_data['Student Count']):
 # 2. total number of students supported (sum of all 'Student Count' values)
 total_wrra_students = stu_data[stu_data['Student Type'] != 'Non-Federal']['Student Count'].sum()
 total_students = stu_data['Student Count'].sum()
-info_text = (f"Total Students Supported by WRRA $: {total_wrra_students}\n"
+info_text = (f"Total Students Supported by WRRA Funding: {total_wrra_students}\n"
              f"Total Students Supported: {total_students}")
 ax2 = student_fig.add_subplot(1, 2, 2)
 ax2.axis('off')
@@ -180,31 +185,27 @@ student_fig.savefig('saved_figs/student_visualizations.png')
 # Subplots (from proj_data):
 # 1. bar chart, grouped by 'WRRI Science Priority', count of projects in each priority
 # Figure arrangement:
-# 1 row, 2 columns (first subplot on left, second subplot on right)
-# all subplots should use legends instead of direct labels
+# 1 row, 3 columns (first subplot on left, nothing in middle, second subplot on right)
 
 cat_bar_fig = plt.figure(figsize=(24, 12))
+gs = cat_bar_fig.add_gridspec(1, 2, width_ratios=[3, 2])
 
 # Subplot 1: Category vs. Count
 # title: Category Usage
 # y label: # of Projects Using Category
-# x labels: none (use legend instead)
-# legend: each category
-# put number on top of each bar
-# put percentages just below top of bar
-ax1 = cat_bar_fig.add_subplot(1, 1, 1)
-colors = plt.cm.Set3(range(len(cat_data)))
-bars = ax1.bar(cat_data['Category'], cat_data['Count'], color=colors)
-ax1.set_xticks([])
+# each category represented by a different color
+# put percentage on top of each bar
+ax1 = cat_bar_fig.add_subplot(gs[0, 0])
+colors1 = plt.get_cmap('tab20', len(cat_data))(range(len(cat_data)))
+bars1 = ax1.bar(cat_data['Category'], cat_data['Count'], color=colors1)
 ax1.set_title('Category Usage')
 ax1.set_ylabel('# of Projects Using Category')
-ax1.legend(bars, cat_data['Category'], title='Categories', bbox_to_anchor=(1.05, 1), loc='upper left')
-
+ax1.set_xticks([])
+ax1.margins(x=0.01)
+ax1.legend(bars1, cat_data['Category'], title='Categories (for Category Usage)', loc='upper right')
 for i, v in enumerate(cat_data['Count']):
-  ax1.text(i, v + 0.125, str(v), ha='center', va='bottom')
   percentage = (v / cat_data['Count'].sum()) * 100
-  ax1.text(i, v - 0.25, f'{percentage:.1f}%', ha='center', va='top')
-
+  ax1.text(i, v + 0.125, f'{percentage:.1f}%', ha='center', va='bottom')
 
 # Subplot 2: WRRI Science Priority vs. Project Count
 # title: WRRI Science Priority vs. Project Count
@@ -212,11 +213,14 @@ for i, v in enumerate(cat_data['Count']):
 # put number on top of each bar
 # put percentages just below top of bar
 wrri_counts = proj_data['WRRI Science Priority'].value_counts()
-ax2 = cat_bar_fig.add_subplot(1, 2, 2)
-ax2.bar(wrri_counts.index, wrri_counts.values)
+ax2 = cat_bar_fig.add_subplot(gs[0, 1])
+colors2 = plt.get_cmap('tab20', len(cat_data))(range(len(cat_data)))
+bars2 = ax2.bar(wrri_counts.index, wrri_counts.values, color=colors2)
 ax2.set_title('WRRI Science Priority vs. Project Count')
-ax2.tick_params(axis='x', labelsize=8)
 ax2.set_ylabel('# of Projects')
+ax2.set_xticks([])
+ax2.margins(x=0.01)
+ax2.legend(bars2, wrri_counts.index, title='WRRI Science Priorities', loc='upper right')
 for i, v in enumerate(wrri_counts.values):
   ax2.text(i, v + 0.125, str(v), ha='center', va='bottom')
   percentage = (v / wrri_counts.sum()) * 100
@@ -237,25 +241,25 @@ cat_bar_fig.savefig('saved_figs/category_bar_visualizations.png')
 cat_pie_fig = plt.figure(figsize=(12, 10))
 
 # Subplot 3: Pie chart of WRRI Science Priority distribution
-ax1 = cat_pie_fig.add_subplot(2, 3, 3)
+ax1 = cat_pie_fig.add_subplot(2, 2, 1)
 ax1.pie(wrri_counts.values, labels=wrri_counts.index, autopct='%1.1f%%')
 ax1.set_title('Distribution of WRRI Science Priorities')
 
 # Subplot 4: Pie chart of Focus Category 1 distribution
 focus_cat1_counts = proj_data['Focus Category 1'].value_counts()
-ax2 = cat_pie_fig.add_subplot(2, 3, 4)
+ax2 = cat_pie_fig.add_subplot(2, 2, 2)
 ax2.pie(focus_cat1_counts.values, labels=focus_cat1_counts.index, autopct='%1.1f%%')
 ax2.set_title('Distribution of Focus Category 1')
 
 # Subplot 5: Pie chart of Focus Category 2 distribution
 focus_cat2_counts = proj_data['Focus Category 2'].value_counts()
-ax3 = cat_pie_fig.add_subplot(2, 3, 5)
+ax3 = cat_pie_fig.add_subplot(2, 2, 3)
 ax3.pie(focus_cat2_counts.values, labels=focus_cat2_counts.index, autopct='%1.1f%%')
 ax3.set_title('Distribution of Focus Category 2')
 
 # Subplot 6: Pie chart of Focus Category 3 distribution
 focus_cat3_counts = proj_data['Focus Category 3'].value_counts()
-ax4 = cat_pie_fig.add_subplot(2, 3, 6)
+ax4 = cat_pie_fig.add_subplot(2, 2, 4)
 ax4.pie(focus_cat3_counts.values, labels=focus_cat3_counts.index, autopct='%1.1f%%')
 ax4.set_title('Distribution of Focus Category 3')
 
