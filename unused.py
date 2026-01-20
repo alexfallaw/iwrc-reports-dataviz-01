@@ -1,3 +1,11 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+from dataviz import clean_currency
+
+
+proj_data = pd.read_csv('data/projects.csv')
+
 # make subset of data with only relevant columns
 proj_data = proj_data[['Project ID', 'Funding Type', 'Funding Amount']]
 
