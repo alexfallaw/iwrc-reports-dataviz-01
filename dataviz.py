@@ -137,7 +137,7 @@ ax4.axis('off')
 ax4.text(0.1, 0.5, info_text, fontsize=12, verticalalignment='center')
 
 plt.tight_layout()
-# plt.show()
+funding_fig.savefig('saved_figs/funding_visualizations.png')
 
 
 # ----- STUDENT VISUALIZATIONS -----
@@ -171,21 +171,96 @@ ax2.axis('off')
 ax2.text(0.1, 0.5, info_text, fontsize=12, verticalalignment='center')
 
 plt.tight_layout()
-plt.show()
+student_fig.savefig('saved_figs/student_visualizations.png')
 
 
-# ----- CATEGORY VISUALIZATIONS -----
+# ----- CATEGORY VISUALIZATIONS PT. 1 -----
 # Subplots (from cat_data):
 # 1. bar chart, 'Category' vs. 'Count'
-# 2. pie chart, distribution of categories (based on 'Count')
 # Subplots (from proj_data):
 # 1. bar chart, grouped by 'WRRI Science Priority', count of projects in each priority
-# 2. pie chart, distribution of 'WRRI Science Priority' values
-# 3. pie chart, distribution of 'Focus Category 1' values
-# 4. pie chart, distribution of 'Focus Category 2' values
-# 5. pie chart, distribution of 'Focus Category 3' values
+# Figure arrangement:
+# 1 row, 2 columns (first subplot on left, second subplot on right)
+# all subplots should use legends instead of direct labels
+
+cat_bar_fig = plt.figure(figsize=(24, 12))
+
+# Subplot 1: Category vs. Count
+# title: Category Usage
+# y label: # of Projects Using Category
+# x labels: none (use legend instead)
+# legend: each category
+# put number on top of each bar
+# put percentages just below top of bar
+ax1 = cat_bar_fig.add_subplot(1, 1, 1)
+colors = plt.cm.Set3(range(len(cat_data)))
+bars = ax1.bar(cat_data['Category'], cat_data['Count'], color=colors)
+ax1.set_xticks([])
+ax1.set_title('Category Usage')
+ax1.set_ylabel('# of Projects Using Category')
+ax1.legend(bars, cat_data['Category'], title='Categories', bbox_to_anchor=(1.05, 1), loc='upper left')
+
+for i, v in enumerate(cat_data['Count']):
+  ax1.text(i, v + 0.125, str(v), ha='center', va='bottom')
+  percentage = (v / cat_data['Count'].sum()) * 100
+  ax1.text(i, v - 0.25, f'{percentage:.1f}%', ha='center', va='top')
 
 
+# Subplot 2: WRRI Science Priority vs. Project Count
+# title: WRRI Science Priority vs. Project Count
+# y label: # of Projects
+# put number on top of each bar
+# put percentages just below top of bar
+wrri_counts = proj_data['WRRI Science Priority'].value_counts()
+ax2 = cat_bar_fig.add_subplot(1, 2, 2)
+ax2.bar(wrri_counts.index, wrri_counts.values)
+ax2.set_title('WRRI Science Priority vs. Project Count')
+ax2.tick_params(axis='x', labelsize=8)
+ax2.set_ylabel('# of Projects')
+for i, v in enumerate(wrri_counts.values):
+  ax2.text(i, v + 0.125, str(v), ha='center', va='bottom')
+  percentage = (v / wrri_counts.sum()) * 100
+  ax2.text(i, v - 0.25, f'{percentage:.1f}%', ha='center', va='top')
+
+plt.tight_layout()
+cat_bar_fig.savefig('saved_figs/category_bar_visualizations.png')
+
+# ----- CATEGORY VISUALIZATIONS PT. 2 -----
+# Subplots (from proj_data):
+# 1. pie chart, distribution of 'WRRI Science Priority' values
+# 2. pie chart, distribution of 'Focus Category 1' values
+# 3. pie chart, distribution of 'Focus Category 2' values
+# 4. pie chart, distribution of 'Focus Category 3' values
+# Figure arrangement:
+# 2 rows, 2 columns (first subplot on top left, remaining subplots filling the rest of the grid)
+
+cat_pie_fig = plt.figure(figsize=(12, 10))
+
+# Subplot 3: Pie chart of WRRI Science Priority distribution
+ax1 = cat_pie_fig.add_subplot(2, 3, 3)
+ax1.pie(wrri_counts.values, labels=wrri_counts.index, autopct='%1.1f%%')
+ax1.set_title('Distribution of WRRI Science Priorities')
+
+# Subplot 4: Pie chart of Focus Category 1 distribution
+focus_cat1_counts = proj_data['Focus Category 1'].value_counts()
+ax2 = cat_pie_fig.add_subplot(2, 3, 4)
+ax2.pie(focus_cat1_counts.values, labels=focus_cat1_counts.index, autopct='%1.1f%%')
+ax2.set_title('Distribution of Focus Category 1')
+
+# Subplot 5: Pie chart of Focus Category 2 distribution
+focus_cat2_counts = proj_data['Focus Category 2'].value_counts()
+ax3 = cat_pie_fig.add_subplot(2, 3, 5)
+ax3.pie(focus_cat2_counts.values, labels=focus_cat2_counts.index, autopct='%1.1f%%')
+ax3.set_title('Distribution of Focus Category 2')
+
+# Subplot 6: Pie chart of Focus Category 3 distribution
+focus_cat3_counts = proj_data['Focus Category 3'].value_counts()
+ax4 = cat_pie_fig.add_subplot(2, 3, 6)
+ax4.pie(focus_cat3_counts.values, labels=focus_cat3_counts.index, autopct='%1.1f%%')
+ax4.set_title('Distribution of Focus Category 3')
+
+plt.tight_layout()
+cat_pie_fig.savefig('saved_figs/category_pie_visualizations.png')
 
 # ----- PRODUCT VISUALIZATIONS -----
 # Subplots (from prod_data):
