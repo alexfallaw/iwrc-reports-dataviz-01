@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def clean_currency(x):
-    print(f"Cleaning value: {x}")
-    if isinstance(x, str):
-      return float(x.replace('$', '').replace(',', '').strip())
-      
-    return float(x)
+  print(f"Cleaning value: {x}")
+  if isinstance(x, str):
+    return float(x.replace('$', '').replace(',', '').strip())
+  
+  return float(x)
     
 
 
