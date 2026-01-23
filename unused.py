@@ -1,10 +1,10 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from dataviz import clean_currency
+from trial import clean_currency
 
 
-proj_data = pd.read_csv('data/projects.csv')
+proj_data = pd.read_csv('data\projects.csv')
 
 # make subset of data with only relevant columns
 proj_data = proj_data[['Project ID', 'Funding Type', 'Funding Amount']]
@@ -79,7 +79,7 @@ for i, v in enumerate(fund_grps['Funding Amount']):
 plt.show()
 
 
-cat_data = pd.read_csv('data/category_data.csv')
+cat_data = pd.read_csv('data\category_data.csv')
 
 # ----- CATEGORY VISUALIZATIONS PT. 1 -----
 # Subplots (from cat_data):

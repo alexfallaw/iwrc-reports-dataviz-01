@@ -1,19 +1,21 @@
+import textwrap
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.cm as cm
 import numpy as np
 
+# utility function to clean currency strings
 def clean_currency(x):
   if isinstance(x, str):
     return float(x.replace('$', '').replace(',', '').strip())
   
   return float(x)
-    
 
-proj_data = pd.read_csv('sample_projects.csv')
-prod_data = pd.read_csv('sample_products.csv')
-award_data = pd.read_csv('sample_awards.csv')
+
+proj_data = pd.read_csv('data\sample_projects.csv')
+prod_data = pd.read_csv('data\sample_products.csv')
+award_data = pd.read_csv('data\sample_awards.csv')
 
 # clean funding amount column from proj_data
 proj_data['Funding Amount'] = proj_data['Funding Amount'].apply(clean_currency)
