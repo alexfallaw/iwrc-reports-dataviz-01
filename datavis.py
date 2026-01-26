@@ -195,8 +195,10 @@ student_fig.savefig('saved_figs/student_visualizations.png')
 # 1. bar chart, 'WRRI Science Priority' vs. 'Project Count'
 # 2. pie chart, 'WRRI Science Priority' vs. 'Project Count'
 # 3. bar chart, 'WRRI Science Priority' vs. 'Funding Amount'
+# Additional info to display:
+# The relative lengths of each bar in subplot 3, with 800000 being "1"
 # Figure arrangement:
-# 2 rows, 2 columns (first subplot on top left, second subplot on top right, third subplot on bottom left, bottom right empty)
+# 2 rows, 2 columns (first subplot on top left, second subplot on top right, third subplot on bottom left, bottom right additional info)
 
 science_fig = plt.figure(figsize=(16, 12))
 
@@ -229,5 +231,19 @@ ax3.set_ylabel('Funding Amount')
 ax3.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x/1e3:.0f}K'))
 for i, v in enumerate(science_grps['Funding Amount']):
   ax3.text(i, v + 12500, f'${v:,.0f}', ha='center', va='bottom')
+
+# Additional info to display:
+# The relative lengths of each bar in subplot 3 to 4 decimal places, with 800000 being "1"
+# strip newlines from priority names for clarity
+relative_lengths = science_grps['Funding Amount'] / 800000
+info_text = "Relative Lengths of Funding Amount Bars (800,000 = 1):\n"
+for priority, rel_length in zip(science_grps['WRRI Science Priority'], relative_lengths):
+  priority_long = priority.replace('\n', ' ')
+  info_text += f"{priority_long}: {rel_length:.4f}\n"
+ax4 = science_fig.add_subplot(2, 2, 4)
+ax4.axis('off')
+ax4.text(0.1, 0.5, info_text, fontsize=12, verticalalignment='center')
+
+
 plt.tight_layout()
 science_fig.savefig('saved_figs/science_priority_visualizations.png')
