@@ -16,9 +16,9 @@ def clean_currency(x):
 def wrap_label(label, width=15):
   return '\n'.join(textwrap.wrap(label, width=width))
 
-proj_data = pd.read_csv('data\\sample_projects.csv')
-prod_data = pd.read_csv('data\\sample_products.csv')
-award_data = pd.read_csv('data\\sample_awards.csv')
+proj_data = pd.read_csv('data\\projects_data.csv')
+prod_data = pd.read_csv('data\\products_data.csv')
+award_data = pd.read_csv('data\\awards_data.csv')
 
 
 # clean funding amount column from proj_data
@@ -63,12 +63,109 @@ science_grps = proj_data.groupby('WRRI Science Priority', as_index=False, dropna
   **{'Project Count': ('Project ID', 'size'), 'Funding Amount': ('Funding Amount', 'sum')}
 ).sort_values('Project Count', ascending=False)
 
-# I want to change each priority name to add line breaks for better visualization
+# change each priority name to add line breaks for better visualization
 science_grps['WRRI Science Priority'] = science_grps['WRRI Science Priority'].apply(wrap_label)
 
 print(science_grps.to_string())
 
 
+# new DF (from proj_data):
+# group by "PI Affiliated Organization"
+# aggregate to get count of projects and sum of 'Funding Amount' in each priority
+# sort by funding amount descending
+inst_grps = proj_data.groupby('PI Affiliated Organization', as_index=False, dropna=True).agg(
+  **{'Project Count': ('Project ID', 'size'), 'Funding Amount': ('Funding Amount', 'sum')}
+).sort_values('Project Count', ascending=False)
+
+# rename 'PI Afilliated Organization' to 'Institution'
+inst_grps.rename(columns={'PI Affiliated Organization': 'Institution'}, inplace=True)
+
+# add line breaks to institution for better visualization
+inst_grps['Institution'] = inst_grps['Institution'].apply(wrap_label)
+
+
+# ----- INSTITUTION VISUALIZATIONS -----
+# Subplots (from inst_grps):
+# 1. bar chart, 'Institution' vs 'Funding Amount', only include biggest number
+# 2. bar chart, 'Institution' vs 'Funding Amount', only include second biggest number
+# 2. bar chart, 'Institution' vs 'Funding Amount', include all but two biggest numbers
+# Additional info to display:
+# 1. The relative length of the bar in figure 1, if 1500000 is "1"
+# 2. The relative length of the bar in figure 2, if 300000 is "1"
+# 3. The relative lengths of the bars in figure 3, if 30000 is "1"
+# Figure arrangement:
+# 2 rows, 2 columns (first two subplots on top row, third subplot on bottom left, additional info on bottom right)
+
+inst_fig = plt.figure(figsize=(12, 8))
+
+# Subplot 1: largest funding amount
+# y label: funding provided
+# y tick marks go from 0 to 1.5 million
+# y axis formatted as currency in units of 1.XXM
+# put amount on top of bar
+ax1 = inst_fig.add_subplot(2, 2, 1)
+inst_sorted = inst_grps.sort_values('Funding Amount', ascending=False)
+largest_inst = inst_sorted.iloc[0]
+ax1.bar([largest_inst['Institution']], [largest_inst['Funding Amount']])
+ax1.set_title('Institution vs. Funding Amount (Largest)')
+ax1.tick_params(axis='x', labelsize=8)
+ax1.set_ylabel('Funding Provided')
+ax1.set_ylim(0, 1500000)
+ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x/1e6:.2f}M'))
+ax1.text(0, largest_inst['Funding Amount'] + 25000, f"${largest_inst['Funding Amount']:,.0f}", ha='center', va='bottom')
+
+# Subplot 2: second largest funding amount
+# y label: funding provided
+# y tick marks go from 0 to 300 thousand
+# y axis formatted as currency in units of 1XXK
+# put amount on top of bar
+ax2 = inst_fig.add_subplot(2, 2, 2)
+second_inst = inst_sorted.iloc[1]
+ax2.bar([second_inst['Institution']], [second_inst['Funding Amount']])
+ax2.set_title('Institution vs. Funding Amount (Second Largest)')
+ax2.tick_params(axis='x', labelsize=8)
+ax2.set_ylabel('Funding Provided')
+ax2.set_ylim(0, 300000)
+ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x/1e3:.0f}K'))
+ax2.text(0, second_inst['Funding Amount'] + 5000, f"${second_inst['Funding Amount']:,.0f}", ha='center', va='bottom')
+
+# Subplot 3: remaining institutions
+# y label: funding provided
+# y tick marks go from 0 to 35 thousand
+# y axis formatted as currency in units of 1X.XK
+# put amount on top of each bar
+ax3 = inst_fig.add_subplot(2, 2, 3)
+remaining_insts = inst_sorted.iloc[2:]
+ax3.bar(remaining_insts['Institution'], remaining_insts['Funding Amount'])
+ax3.set_title('Institution vs. Funding Amount (Remaining)')
+ax3.tick_params(axis='x', labelsize=8)
+ax3.set_ylabel('Funding Provided')
+ax3.set_ylim(0, 35000)
+ax3.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x/1e3:.1f}K'))
+for i, v in enumerate(remaining_insts['Funding Amount']):
+  ax3.text(i, v + 500, f'${v:,.0f}', ha='center', va='bottom')
+
+
+# Additional info to display:
+# 1. The relative length of the bar in figure 1, with 1500000 being "1"
+# 2. The relative length of the bar in figure 2, with 300000 being "1"
+# 3. The relative lengths of the bars in figure 3, with 30000 is "1"
+# for all: strip newline characters from institution names for clarity, list number to 4 decimal places
+info_text = "Relative Lengths of Funding Amount Bars:\n"
+largest_name = largest_inst['Institution'].replace('\n', ' ')
+second_name = second_inst['Institution'].replace('\n', ' ')
+info_text += f"{largest_name} (1,500,000 = 1): {largest_inst['Funding Amount'] / 1500000:.4f}\n"
+info_text += f"{second_name} (300,000 = 1): {second_inst['Funding Amount'] / 300000:.4f}\n"
+for inst, amount in zip(remaining_insts['Institution'], remaining_insts['Funding Amount']):
+  inst_name = inst.replace('\n', ' ')
+  info_text += f"{inst_name} (30,000 = 1): {amount / 30000:.4f}\n"
+ax4 = inst_fig.add_subplot(2, 2, 4)
+ax4.axis('off')
+ax4.text(0.1, 0.5, info_text, fontsize=12, verticalalignment='center')
+
+
+plt.tight_layout()
+inst_fig.savefig('saved_figs/institution_visualizations.png')
 
 # ----- FUNDING VISUALIZATIONS -----
 # Subplots (from proj_data):
@@ -105,16 +202,16 @@ for i, (category, count) in enumerate(funding_type_counts.items()):
 # put number on top of each bar
 # y axis formatted as currency in units of 1.XM
 # y tick marks go from 0 to 3,000,000 in increments of 500,000
-ax3 = funding_fig.add_subplot(2, 2, 2)
+ax2 = funding_fig.add_subplot(2, 2, 2)
 funding_amounts = proj_data.groupby('Funding Type')['Funding Amount'].sum().sort_values(ascending=False)
-ax3.bar(funding_amounts.index, funding_amounts.values)
-ax3.set_title('Funding Type vs. Total Funding Amount')
-ax3.tick_params(axis='x', labelsize=8)
-ax3.set_ylabel('Total Funding Amount')
-ax3.set_ylim(0, 3000000)
-ax3.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x/1e6:.1f}M'))
+ax2.bar(funding_amounts.index, funding_amounts.values)
+ax2.set_title('Funding Type vs. Total Funding Amount')
+ax2.tick_params(axis='x', labelsize=8)
+ax2.set_ylabel('Total Funding Amount')
+ax2.set_ylim(0, 3000000)
+ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x/1e6:.1f}M'))
 for i, (category, amount) in enumerate(funding_amounts.items()):
-  ax3.text(i, amount + 25000, f'${amount/1e6:.1f}M', ha='center', va='bottom')
+  ax2.text(i, amount + 25000, f'${amount/1e6:.1f}M', ha='center', va='bottom')
 
 # Subplot 3: Funding Type vs. Average Funding Per Project
 # sort by average funding amount descending
