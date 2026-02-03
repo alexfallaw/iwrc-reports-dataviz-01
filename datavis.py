@@ -100,18 +100,18 @@ inst_gs = inst_fig.add_gridspec(1, 2, width_ratios=[2, 1])
 # set up section scaling
 min_1 = 0
 max_1 = 35000
-incr_1 = 5000
-ticks_1 = (max_1 - min_1) / incr_1
+incr_1 = 2500.0
+units_1 = (max_1 - min_1) / incr_1
 
-min_2 = 250000
-max_2 = 300000
-incr_2 = 50000
-ticks_2 = (max_2 - min_2) / incr_2
+min_2 = 225000
+max_2 = 325000
+incr_2 = 25000.0
+units_2 = (max_2 - min_2) / incr_2
 
 min_3 = 1300000
 max_3 = 1500000
-incr_3 = 100000
-ticks_3 = (max_3 - min_3) / incr_3
+incr_3 = 50000.0
+units_3 = (max_3 - min_3) / incr_3
 
 # Subplot 1: Institutions by Funding Provided
 # y label: Funding Amount
@@ -124,7 +124,7 @@ ticks_3 = (max_3 - min_3) / incr_3
 # make each tick increment the same visual length:
 #   bottom has 7 increments (0-35k by 5k), middle has 1 increment (250-300k by 50k),
 #   top has 2 increments (1.3-1.5M by 0.1M) -> height ratios [2, 1, 7]
-inst_left_gs = inst_gs[0].subgridspec(3, 1, height_ratios=[ticks_3, ticks_2, ticks_1], hspace=0.05)
+inst_left_gs = inst_gs[0].subgridspec(3, 1, height_ratios=[units_3, units_2, units_1], hspace=0.05)
 ax_top = inst_fig.add_subplot(inst_left_gs[0])
 ax_mid = inst_fig.add_subplot(inst_left_gs[1], sharex=ax_top)
 ax_bot = inst_fig.add_subplot(inst_left_gs[2], sharex=ax_top)
@@ -137,24 +137,38 @@ for ax in (ax_top, ax_mid, ax_bot):
 # first section
 # formatting: currency, 1XK
 ax_bot.set_ylim(min_1, max_1)
-ax_bot.set_yticks(np.arange(min_1, max_1, incr_1))
+ax_bot.set_yticks(np.arange(min_1, max_1 + 1, incr_1))
 ax_bot.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f'${v/1e3:.0f}K'))
+
+
+for index, label in enumerate(ax_bot.yaxis.get_ticklabels()):
+  if index % 2 != 0:
+    label.set_visible(False)
+
 
 # second section
 # range: 250 thousand to 300 thousand
 # tick increments: 50 thousand
 # formatting: currency, 1XXK
-ax_mid.set_ylim(200000, 400000)
-ax_mid.set_yticks(np.arange(250000, 300001, 50000))
+ax_mid.set_ylim(min_2, max_2)
+ax_mid.set_yticks(np.arange(min_2, max_2 + 1, incr_2))
 ax_mid.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f'${v/1e3:.0f}K'))
+
+for index, label in enumerate(ax_mid.yaxis.get_ticklabels()):
+  if index % 2 != 1:
+    label.set_visible(False)
 
 # third section
 # range: 1.3 million to 1.5 million
 # tick increments: 0.1 million
 # formatting: currency, 1.XM
-ax_top.set_ylim(1300000, 1500000)
-ax_top.set_yticks(np.arange(1300000, 1500001, 100000))
+ax_top.set_ylim(min_3, max_3)
+ax_top.set_yticks(np.arange(min_3, max_3 + 1, incr_3))
 ax_top.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f'${v/1e6:.1f}M'))
+
+for index, label in enumerate(ax_top.yaxis.get_ticklabels()):
+  if index % 2 != 0:
+    label.set_visible(False)
 
 # only show ticks on bottom axis
 ax_bot.set_xticks(x)
@@ -165,13 +179,13 @@ plt.setp(ax_mid.get_xticklabels(), visible=False)
 # put funding amount on top of each bar
 # formatting for values <100K: 1.XK
 # formatting for values >100k and <1M: 1XXK
-# formatting for values >1M: 1.XM
+# formatting for values >1M: 1.XXM
 def format_funding_label(value):
   if value < 100000:
     return f'${value/1e3:.1f}K'
   if value < 1000000:
     return f'${value/1e3:.0f}K'
-  return f'${value/1e6:.1f}M'
+  return f'${value/1e6:.2f}M'
 
 for i, amount in enumerate(inst_grps['Funding Amount']):
   if amount <= ax_bot.get_ylim()[1]:
@@ -187,17 +201,17 @@ for i, amount in enumerate(inst_grps['Funding Amount']):
 # Additional info to display:
 # The relative lengths of the bars in figure 4, with the total height of the chart as "1"
 # strip newline characters from institution names for clarity, list number to 4 decimal places
-TOTAL_UNITS = 10.0  # 7 + 1 + 2, corresponds to y = 1,500,000
+TOTAL_UNITS = units_1 + units_2 + units_3  # corresponds to y = 1,500,000
 
 def broken_axis_height_units(value):
-  if value <= 35000:
-    return (value / 5000.0)  # 0-7 units
-  if value <= 300000:
-    # Full bottom segment (7 units) + middle partial (0-1 unit)
-    return 7.0 + ((value - 250000.0) / 50000.0)
+  if value <= max_1:
+    return (value / incr_1)
+  if value <= max_2:
+    # Full bottom segment + middle partial 
+    return units_1 + ((value - min_2) / incr_2)
   # value in top segment
-  # Full bottom + middle (8 units) + top partial (0-2 units)
-  return 8.0 + ((value - 1300000.0) / 100000.0)
+  # Full bottom + middle + top partial
+  return units_1 + units_2 + ((value - min_3) / incr_3)
 
 info_text = "Relative Lengths of Funding Amount Bars (1,500,000 = 1.0):\n"
 for inst, amount in zip(inst_grps['Institution'], inst_grps['Funding Amount']):
