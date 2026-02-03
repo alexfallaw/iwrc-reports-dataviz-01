@@ -99,16 +99,21 @@ inst_gs = inst_fig.add_gridspec(1, 2, width_ratios=[2, 1])
 
 # set up section scaling
 min_1 = 0
-max_1 = 35000
+max_1 = 32500
 incr_1 = 2500.0
 units_1 = (max_1 - min_1) / incr_1
+
+# min_1 = 0
+# max_1 = 22500
+# incr_1 = 25000.0
+# units_1 = (max_1 - min_1) / incr_1
 
 min_2 = 225000
 max_2 = 325000
 incr_2 = 25000.0
 units_2 = (max_2 - min_2) / incr_2
 
-min_3 = 1300000
+min_3 = 1350000
 max_3 = 1500000
 incr_3 = 50000.0
 units_3 = (max_3 - min_3) / incr_3
@@ -167,7 +172,7 @@ ax_top.set_yticks(np.arange(min_3, max_3 + 1, incr_3))
 ax_top.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f'${v/1e6:.1f}M'))
 
 for index, label in enumerate(ax_top.yaxis.get_ticklabels()):
-  if index % 2 != 0:
+  if index % 2 != 1:
     label.set_visible(False)
 
 # only show ticks on bottom axis
@@ -200,7 +205,7 @@ for i, amount in enumerate(inst_grps['Funding Amount']):
 
 # Additional info to display:
 # The relative lengths of the bars in figure 4, with the total height of the chart as "1"
-# strip newline characters from institution names for clarity, list number to 4 decimal places
+# strip newline characters from institution names for clarity, list number to 5 decimal places
 TOTAL_UNITS = units_1 + units_2 + units_3  # corresponds to y = 1,500,000
 
 def broken_axis_height_units(value):
@@ -213,11 +218,13 @@ def broken_axis_height_units(value):
   # Full bottom + middle + top partial
   return units_1 + units_2 + ((value - min_3) / incr_3)
 
-info_text = "Relative Lengths of Funding Amount Bars (1,500,000 = 1.0):\n"
+info_text = f"Relative Lengths of Funding Amount Bars ({max_3} = 1.0):\n"
 for inst, amount in zip(inst_grps['Institution'], inst_grps['Funding Amount']):
   inst_long = inst.replace('\n', ' ')
   rel_length = broken_axis_height_units(amount) / TOTAL_UNITS
-  info_text += f"{inst_long}: {rel_length:.4f}\n"
+  info_text += f"{inst_long}: {rel_length:.5f}\n"
+
+info_text += f"Distance between tick marks: {(1 / TOTAL_UNITS):.5f}\nTotal number of tick marks: {TOTAL_UNITS:.0f}"
 
 ax_info = inst_fig.add_subplot(inst_gs[1])
 ax_info.axis('off')
