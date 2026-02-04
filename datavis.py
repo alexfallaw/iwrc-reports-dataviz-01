@@ -69,8 +69,8 @@ science_grps['WRRI Science Priority'] = science_grps['WRRI Science Priority'].ap
 
 # new DF (from proj_data):
 # group by "PI Affiliated Organization"
-# aggregate to get count of projects and sum of 'Funding Amount' in each priority
-# sort by funding amount descending
+# aggregate to get count of projects and sum of 'Funding Amount' in each institut
+# sort by funding amount ascending
 inst_grps = proj_data.groupby('PI Affiliated Organization', as_index=False, dropna=True).agg(
   **{'Project Count': ('Project ID', 'size'), 'Funding Amount': ('Funding Amount', 'sum')}
 ).sort_values('Funding Amount', ascending=True)
@@ -78,17 +78,54 @@ inst_grps = proj_data.groupby('PI Affiliated Organization', as_index=False, drop
 # rename 'PI Afilliated Organization' to 'Institution'
 inst_grps.rename(columns={'PI Affiliated Organization': 'Institution'}, inplace=True)
 
+# remove 'Basil's Harvest' and 'National Great Rivers Research & Education Center' rows
+inst_grps = inst_grps[~inst_grps['Institution'].isin(["Basil's Harvest", "National Great Rivers Research & Education Center"])]
+
+
 # add line breaks to institution for better visualization
 inst_grps['Institution'] = inst_grps['Institution'].apply(wrap_label)
 
 print(inst_grps.to_string())
 
+# # new DF (from proj_data and proj_data 2):
+# # group each by "PI Affiliated Organization" and aggregate for count of projects and sum of 'Funding Amount'
+# # combine into 1 dataframe with columns 'Institution A' 'Count A' 'Funding Amount A' 'Insitution B' 'Count B' 'Funding Amount B'
+# inst_grps_a = proj_data.groupby('PI Affiliated Organization', as_index=False, dropna=True).agg(
+#   **{'Project Count': ('Project ID', 'size'), 'Funding Amount': ('Funding Amount', 'sum')}
+# )
+# inst_grps_b = proj_data_2.groupby('PI Affiliated Organization', as_index=False, dropna=True).agg(
+#   **{'Project Count': ('Project ID', 'size'), 'Funding Amount': ('Funding Amount', 'sum')}
+# )
+
+# inst_grps_a = inst_grps_a.rename(columns={
+#   'PI Affiliated Organization': 'Institution A',
+#   'Project Count': 'Count A',
+#   'Funding Amount': 'Funding Amount A'
+# })
+# inst_grps_b = inst_grps_b.rename(columns={
+#   'PI Affiliated Organization': 'Institution B',
+#   'Project Count': 'Count B',
+#   'Funding Amount': 'Funding Amount B'
+# })
+
+# inst_compare = pd.merge(
+#   inst_grps_a,
+#   inst_grps_b,
+#   left_on='Institution A',
+#   right_on='Institution B',
+#   how='outer'
+# )
+# inst_compare['Funding Amount Diff'] = (
+#   inst_compare['Funding Amount B'].fillna(0) - inst_compare['Funding Amount A'].fillna(0)
+# )
+
+# print(inst_compare.to_string())
 
 # ----- INSTITUTION VISUALIZATIONS -----
 # Subplots (from inst_grps):
 # 1. bar chart, 'Institution' vs 'Funding Amount'
 # Additional info to display:
-# 4. the relative lengths of the bars in figure 1
+# 1. the relative lengths of the bars in figure 1
 # Figure arrangement:
 # 1 rows, 2 columns
 # subplot in first column, take up 2/3 of figure space
@@ -99,7 +136,7 @@ inst_gs = inst_fig.add_gridspec(1, 2, width_ratios=[2, 1])
 
 # set up section scaling
 min_1 = 0
-max_1 = 32500
+max_1 = 55000
 incr_1 = 2500.0
 units_1 = (max_1 - min_1) / incr_1
 
@@ -108,12 +145,12 @@ units_1 = (max_1 - min_1) / incr_1
 # incr_1 = 25000.0
 # units_1 = (max_1 - min_1) / incr_1
 
-min_2 = 225000
-max_2 = 325000
+min_2 = 150000
+max_2 = 350000
 incr_2 = 25000.0
 units_2 = (max_2 - min_2) / incr_2
 
-min_3 = 1350000
+min_3 = 1000000
 max_3 = 1500000
 incr_3 = 50000.0
 units_3 = (max_3 - min_3) / incr_3
@@ -147,7 +184,7 @@ ax_bot.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f'${v/1e3:.0f}K'
 
 
 for index, label in enumerate(ax_bot.yaxis.get_ticklabels()):
-  if index % 2 != 0:
+  if index % 4 != 0:
     label.set_visible(False)
 
 
@@ -160,7 +197,7 @@ ax_mid.set_yticks(np.arange(min_2, max_2 + 1, incr_2))
 ax_mid.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f'${v/1e3:.0f}K'))
 
 for index, label in enumerate(ax_mid.yaxis.get_ticklabels()):
-  if index % 2 != 1:
+  if index % 4 != 2:
     label.set_visible(False)
 
 # third section
@@ -172,7 +209,7 @@ ax_top.set_yticks(np.arange(min_3, max_3 + 1, incr_3))
 ax_top.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f'${v/1e6:.1f}M'))
 
 for index, label in enumerate(ax_top.yaxis.get_ticklabels()):
-  if index % 2 != 1:
+  if index % 4 != 2:
     label.set_visible(False)
 
 # only show ticks on bottom axis
@@ -186,6 +223,8 @@ plt.setp(ax_mid.get_xticklabels(), visible=False)
 # formatting for values >100k and <1M: 1XXK
 # formatting for values >1M: 1.XXM
 def format_funding_label(value):
+  if value < 10000:
+    return f'${value/1e3:.2f}K'
   if value < 100000:
     return f'${value/1e3:.1f}K'
   if value < 1000000:
@@ -233,6 +272,105 @@ ax_info.text(0.0, 0.5, info_text, fontsize=10, verticalalignment='center')
 
 plt.tight_layout()
 inst_fig.savefig('saved_figs/institution_visualizations.png')
+
+# ----- INSTITUTION VISUALIZATIONS ALT -----
+# Subplots (from inst_grps):
+# 1. bar chart, 'Institution' vs 'Funding Amount'
+# Additional info to display:
+# 1. the relative lengths of the bars in figure 1
+# Figure arrangement:
+# 1 rows, 2 columns
+# subplot in first column, take up 2/3 of figure space
+# additional info in second column, take up 1/3 of figure space
+inst_fig = plt.figure(figsize=(12, 8))
+inst_gs = inst_fig.add_gridspec(1, 2, width_ratios=[2, 1])
+
+# set up section scaling
+min_1 = 0
+max_1 = 325000
+incr_1 = 25000.0
+units_1 = (max_1 - min_1) / incr_1
+
+min_2 = 1375000
+max_2 = 1500000
+incr_2 = 25000.0
+units_2 = (max_2 - min_2) / incr_2
+
+# Subplot 1: Institutions by Funding Provided
+# y label: Funding Amount
+# x label: none
+# arrange institutions in ascending order
+# put amount on top of each bar
+
+# split y axes with matching tick scaling in each section
+inst_left_gs = inst_gs[0].subgridspec(2, 1, height_ratios=[units_2, units_1], hspace=0.05)
+ax_top = inst_fig.add_subplot(inst_left_gs[0])
+ax_bot = inst_fig.add_subplot(inst_left_gs[1], sharex=ax_top)
+
+x = np.arange(len(inst_grps))
+for ax in (ax_top, ax_bot):
+  ax.bar(x, inst_grps['Funding Amount'])
+
+# first section (0 - 500k)
+ax_bot.set_ylim(min_1, max_1)
+ax_bot.set_yticks(np.arange(min_1, max_1 + 1, incr_1))
+ax_bot.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f'${v/1e3:.0f}K'))
+
+for index, label in enumerate(ax_bot.yaxis.get_ticklabels()):
+  if index % 2 != 0:
+    label.set_visible(False)
+
+# second section (1.0M - 1.5M)
+ax_top.set_ylim(min_2, max_2)
+ax_top.set_yticks(np.arange(min_2, max_2 + 1, incr_2))
+ax_top.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f'${v/1e6:.2f}M'))
+
+for index, label in enumerate(ax_top.yaxis.get_ticklabels()):
+  if index % 2 != 1:
+    label.set_visible(False)
+
+# only show ticks on bottom axis
+ax_bot.set_xticks(x)
+ax_bot.set_xticklabels(inst_grps['Institution'], fontsize=8)
+plt.setp(ax_top.get_xticklabels(), visible=False)
+
+# put funding amount on top of each bar
+for i, amount in enumerate(inst_grps['Funding Amount']):
+  if amount <= ax_bot.get_ylim()[1]:
+    ax = ax_bot
+  else:
+    ax = ax_top
+  ylim = ax.get_ylim()
+  y_offset = 0.02 * (ylim[1] - ylim[0])
+  ax.text(i, amount + y_offset, format_funding_label(amount), ha='center', va='bottom', fontsize=8, clip_on=False)
+
+
+# Additional info to display:
+# The relative lengths of the bars in figure 4, with the total height of the chart as "1"
+# strip newline characters from institution names for clarity, list number to 5 decimal places
+TOTAL_UNITS = units_1 + units_2  # corresponds to y = 1,500,000 with split scaling
+
+def broken_axis_height_units_alt(value):
+  if value <= max_1:
+    return value / incr_1
+  # value in top segment
+  return units_1 + ((value - min_2) / incr_2)
+
+info_text = f"Relative Lengths of Funding Amount Bars ({max_2} = 1.0):\n"
+for inst, amount in zip(inst_grps['Institution'], inst_grps['Funding Amount']):
+  inst_long = inst.replace('\n', ' ')
+  rel_length = broken_axis_height_units_alt(amount) / TOTAL_UNITS
+  info_text += f"{inst_long}: {rel_length:.5f}\n"
+
+info_text += f"Distance between tick marks: {(1 / TOTAL_UNITS):.5f}\nTotal number of tick marks: {TOTAL_UNITS:.0f}"
+
+ax_info = inst_fig.add_subplot(inst_gs[1])
+ax_info.axis('off')
+ax_info.text(0.0, 0.5, info_text, fontsize=10, verticalalignment='center')
+
+plt.tight_layout()
+inst_fig.savefig('saved_figs/institution_visualizations_alt.png')
+
 
 # ----- FUNDING VISUALIZATIONS -----
 # Subplots (from proj_data):
