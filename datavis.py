@@ -16,6 +16,12 @@ def clean_currency(x):
 def wrap_label(label, width=15):
   return '\n'.join(textwrap.wrap(label, width=width))
 
+xls = pd.ExcelFile('data\\Sample Data.xlsx')
+
+for sheet in xls.sheet_names:
+  df = pd.read_excel('data\\Sample Data.xlsx', sheet_name=sheet)
+  df.to_csv(f'data\\{sheet}.csv', index=False)
+
 proj_data = pd.read_csv('data\\projects_data.csv')
 prod_data = pd.read_csv('data\\products_data.csv')
 award_data = pd.read_csv('data\\awards_data.csv')
@@ -66,6 +72,7 @@ science_grps = proj_data.groupby('WRRI Science Priority', as_index=False, dropna
 # change each priority name to add line breaks for better visualization
 science_grps['WRRI Science Priority'] = science_grps['WRRI Science Priority'].apply(wrap_label)
 
+print(science_grps.to_string())
 
 # new DF (from proj_data):
 # group by "PI Affiliated Organization"
@@ -85,7 +92,6 @@ inst_grps = inst_grps[~inst_grps['Institution'].isin(["Basil's Harvest", "Nation
 # add line breaks to institution for better visualization
 inst_grps['Institution'] = inst_grps['Institution'].apply(wrap_label)
 
-print(inst_grps.to_string())
 
 # # new DF (from proj_data and proj_data 2):
 # # group each by "PI Affiliated Organization" and aggregate for count of projects and sum of 'Funding Amount'
@@ -136,7 +142,7 @@ inst_gs = inst_fig.add_gridspec(1, 2, width_ratios=[2, 1])
 
 # set up section scaling
 min_1 = 0
-max_1 = 55000
+max_1 = 32500
 incr_1 = 2500.0
 units_1 = (max_1 - min_1) / incr_1
 
@@ -145,12 +151,12 @@ units_1 = (max_1 - min_1) / incr_1
 # incr_1 = 25000.0
 # units_1 = (max_1 - min_1) / incr_1
 
-min_2 = 150000
-max_2 = 350000
+min_2 = 225000
+max_2 = 325000
 incr_2 = 25000.0
 units_2 = (max_2 - min_2) / incr_2
 
-min_3 = 1000000
+min_3 = 1350000
 max_3 = 1500000
 incr_3 = 50000.0
 units_3 = (max_3 - min_3) / incr_3
@@ -184,7 +190,7 @@ ax_bot.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f'${v/1e3:.0f}K'
 
 
 for index, label in enumerate(ax_bot.yaxis.get_ticklabels()):
-  if index % 4 != 0:
+  if index % 2 != 0:
     label.set_visible(False)
 
 
@@ -197,7 +203,7 @@ ax_mid.set_yticks(np.arange(min_2, max_2 + 1, incr_2))
 ax_mid.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f'${v/1e3:.0f}K'))
 
 for index, label in enumerate(ax_mid.yaxis.get_ticklabels()):
-  if index % 4 != 2:
+  if index % 2 != 1:
     label.set_visible(False)
 
 # third section
@@ -209,7 +215,7 @@ ax_top.set_yticks(np.arange(min_3, max_3 + 1, incr_3))
 ax_top.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f'${v/1e6:.1f}M'))
 
 for index, label in enumerate(ax_top.yaxis.get_ticklabels()):
-  if index % 4 != 2:
+  if index % 2 != 1:
     label.set_visible(False)
 
 # only show ticks on bottom axis
@@ -240,7 +246,19 @@ for i, amount in enumerate(inst_grps['Funding Amount']):
     ax = ax_top
   ylim = ax.get_ylim()
   y_offset = 0.02 * (ylim[1] - ylim[0])
-  ax.text(i, amount + y_offset, format_funding_label(amount), ha='center', va='bottom', fontsize=8, clip_on=False)
+  ax.text(i, amount + y_offset, format_funding_label(amount), ha='center', va='bottom', fontsize=10, clip_on=False)
+
+# put project count below each bar
+for i, (count, amount) in enumerate(zip(inst_grps['Project Count'], inst_grps['Funding Amount'])):
+  if amount <= ax_bot.get_ylim()[1]:
+    ax = ax_bot
+  elif amount <= ax_mid.get_ylim()[1]:
+    ax = ax_mid
+  else:
+    ax = ax_top
+  ylim = ax.get_ylim()
+  y_offset = 0.02 * (ylim[1] - ylim[0])
+  ax.text(i, amount - y_offset, f'{count}\nprojects', ha='center', va='top', fontsize=10, color='white', clip_on=False)
 
 # Additional info to display:
 # The relative lengths of the bars in figure 4, with the total height of the chart as "1"
@@ -500,6 +518,7 @@ student_fig.savefig('saved_figs/student_visualizations.png')
 # 3. bar chart, 'WRRI Science Priority' vs. 'Funding Amount'
 # Additional info to display:
 # The relative lengths of each bar in subplot 3, with 800000 being "1"
+# The degrees that correspond to each section of the pie chart in subplot 2
 # Figure arrangement:
 # 2 rows, 2 columns (first subplot on top left, second subplot on top right, third subplot on bottom left, bottom right additional info)
 
@@ -537,12 +556,23 @@ for i, v in enumerate(science_grps['Funding Amount']):
 
 # Additional info to display:
 # The relative lengths of each bar in subplot 3 to 4 decimal places, with 800000 being "1"
+# The degrees that correspond to each section of the pie chart in subplot 2
 # strip newlines from priority names for clarity
 relative_lengths = science_grps['Funding Amount'] / 800000
 info_text = "Relative Lengths of Funding Amount Bars (800,000 = 1):\n"
 for priority, rel_length in zip(science_grps['WRRI Science Priority'], relative_lengths):
   priority_long = priority.replace('\n', ' ')
   info_text += f"{priority_long}: {rel_length:.4f}\n"
+
+science_grps.sort_values(by=['Project Count'], inplace=True, ascending=False)
+
+total_projects = science_grps['Project Count'].sum()
+relative_degrees = (science_grps['Project Count'] / total_projects) * 360
+info_text += "\nDegrees Per Pie Slice:\n"
+for priority, degrees in zip(science_grps['WRRI Science Priority'], relative_degrees):
+  priority_long = priority.replace('\n', ' ')
+  info_text += f"{priority_long}: {degrees:.1f}\n"
+
 ax4 = science_fig.add_subplot(2, 2, 4)
 ax4.axis('off')
 ax4.text(0.1, 0.5, info_text, fontsize=12, verticalalignment='center')
