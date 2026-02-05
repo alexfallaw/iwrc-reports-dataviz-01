@@ -92,6 +92,8 @@ inst_grps = inst_grps[~inst_grps['Institution'].isin(["Basil's Harvest", "Nation
 # add line breaks to institution for better visualization
 inst_grps['Institution'] = inst_grps['Institution'].apply(wrap_label)
 
+print(inst_grps.to_string())
+
 
 # # new DF (from proj_data and proj_data 2):
 # # group each by "PI Affiliated Organization" and aggregate for count of projects and sum of 'Funding Amount'
@@ -157,7 +159,7 @@ incr_2 = 25000.0
 units_2 = (max_2 - min_2) / incr_2
 
 min_3 = 1350000
-max_3 = 1500000
+max_3 = 1550000
 incr_3 = 50000.0
 units_3 = (max_3 - min_3) / incr_3
 
